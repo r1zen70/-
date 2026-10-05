@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Копилка</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  :root{
+    --bg:#0f1115;
+    --card:#191c22;
+    --card2:#22262e;
+    --line:#2c313b;
+    --text:#eef1f6;
+    --muted:#8b93a3;
+    --accent:#22c55e;
+    --accent-dim:#16a34a;
+    --danger:#ef4444;
+    --warn:#f59e0b;
+  }
+
+  html,body{ height:100%; }
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    overflow-x:hidden;
+    overscroll-behavior-y:none;
+  }
+
+  .app{
+    max-width:520px;
+    margin:0 auto;
+    min-height:100%;
+    display:flex;
+    flex-direction:column;
+    padding-top:env(safe-area-inset-top);
+  }
+
+  /* ---------- HEADER ---------- */
+  header{
+    padding:18px 20px 12px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .logo{
+    width:42px;height:42px;
+    border-radius:14px;
+    background:linear-gradient(145deg,#22c55e,#0f7a3a);
+    display:grid;place-items:center;
+    overflow:hidden;
+    box-shadow:0 6px 18px rgba(34,197,94,.3);
+    flex:none;
+  }
+  .logo img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  header h1{
+    font-size:21px;
+    font-weight:800;
+    letter-spacing:.5px;
+  }
+  header .sub{
+    font-size:11px;
+    color:var(--muted);
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    margin-top:1px;
+  }
+
+  /* ---------- VIEWS ---------- */
+  main{
+    flex:1;
+    padding:4px 16px calc(96px + env(safe-area-inset-bottom));
+  }
+  .view{ display:none; animation:fade .25s ease; }
+  .view.active{ display:block; }
+  @keyframes fade{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
+
+  .card{
+    background:var(--card);
+    border-radius:20px;
+    padding:18px;
+    margin-bottom:14px;
+    border:1px solid rgba(255,255,255,.04);
+  }
+
+  .label{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:1.2px;
+    color:var(--muted);
+    font-weight:600;
+    margin-bottom:10px;
+  }
+
+  /* ---------- AMOUNT INPUT ---------- */
+  .amount-wrap{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--card);
+    border:1px solid rgba(255,255,255,.05);
+    border-radius:20px;
+    padding:16px 20px;
+    margin-bottom:14px;
+    transition:border-color .2s;
+  }
+  .amount-wrap:focus-within{ border-color:rgba(34,197,94,.5); }
+  .amount-wrap .cur{
+    font-size:26px;
+    font-weight:800;
+    color:var(--accent);
+  }
+  #amountInput{
+    flex:1;
+    min-width:0;
+    background:transparent;
+    border:none;
+    outline:none;
+    color:var(--text);
+    font-size:26px;
+    font-weight:800;
+    font-variant-numeric:tabular-nums;
+    letter-spacing:.5px;
+  }
+  #amountInput::placeholder{ color:#454b56; }
+
+  /* ---------- RESULT ROWS ---------- */
+  .row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:13px 0;
+    border-bottom:1px solid rgba(255,255,255,.05);
+  }
+  .row:last-child{ border-bottom:none; padding-bottom:2px; }
+  .row:first-child{ padding-top:2px; }
+
+  .dot{
+    width:11px;height:11px;border-radius:50%;
+    flex:none;
+    box-shadow:0 0 10px currentColor;
+  }
+  .row-info{ flex:1; min-width:0; }
+  .row-name{
+    font-size:15px;
+    font-weight:600;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .row-pct{
+    font-size:11.5px;
+    color:var(--muted);
+    margin-top:2px;
+    font-weight:500;
+  }
+  .row-sum{
+    font-size:16.5px;
+    font-weight:800;
+    font-variant-numeric:tabular-nums;
+    white-space:nowrap;
+  }
+
+  .bar{
+    height:4px;
+    border-radius:4px;
+    background:rgba(255,255,255,.06);
+    margin-top:8px;
+    overflow:hidden;
+  }
+  .bar > i{
+    display:block;
+    height:100%;
+    border-radius:4px;
+    transition:width .35s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* ---------- TOTAL ---------- */
+  .total-box{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    padding-top:14px;
+    margin-top:6px;
+    border-top:1px dashed rgba(255,255,255,.12);
+  }
+  .total-box span:first-child{
+    font-size:13px;color:var(--muted);font-weight:600;
+  }
+  .total-box span:last-child{
+    font-size:20px;font-weight:800;
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* ---------- BUTTONS ---------- */
+  .btn{
+    width:100%;
+    border:none;
+    border-radius:16px;
+    padding:16px;
+    font-size:16px;
+    font-weight:700;
+    font-family:inherit;
+    cursor:pointer;
+    transition:transform .12s, opacity .2s, background .2s;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .btn:active{ transform:scale(.975); }
+  .btn-primary{
+    background:linear-gradient(145deg,#22c55e,#15803d);
+    color:#04140a;
+    box-shadow:0 8px 24px rgba(34,197,94,.28);
+    margin-top:14px;
+  }
+  .btn-primary:disabled{
+    background:var(--card2);
+    color:#565d6b;
+    box-shadow:none;
+    cursor:default;
+  }
+  .btn-ghost{
+    background:var(--card2);
+    color:var(--text);
+    margin-top:10px;
+  }
+
+  /* ---------- CATEGORY EDITOR ---------- */
+  .cat-edit{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 0;
+  }
+  .cat-edit input[type="text"]{
+    flex:1;
+    min-width:0;
+    background:var(--card2);
+    border:1px solid transparent;
+    border-radius:12px;
+    padding:11px 13px;
+    color:var(--text);
+    font-size:14.5px;
+    font-family:inherit;
+    font-weight:600;
+    outline:none;
+  }
+  .cat-edit input[type="text"]:focus{ border-color:rgba(34,197,94,.45); }
+
+  .pct-box{
+    display:flex;
+    align-items:center;
+    background:var(--card2);
+    border:1px solid transparent;
+    border-radius:12px;
+    padding:0 10px;
+    transition:border-color .2s;
+  }
+  .pct-box:focus-within{ border-color:rgba(34,197,94,.45); }
+  .pct-box input{
+    width:46px;
+    background:transparent;
+    border:none;
+    outline:none;
+    color:var(--text);
+    font-size:15px;
+    font-weight:800;
+    text-align:right;
+    font-family:inherit;
+    font-variant-numeric:tabular-nums;
+    padding:11px 0;
+  }
+  .pct-box span{ color:var(--muted); font-size:14px; font-weight:700; }
+
+  .del{
+    width:34px;height:34px;flex:none;
+    border-radius:11px;
+    background:rgba(239,68,68,.1);
+    border:none;
+    color:var(--danger);
+    font-size:19px;
+    line-height:1;
+    cursor:pointer;
+    display:grid;place-items:center;
+    transition:background .2s, transform .12s;
+  }
+  .del:active{ transform:scale(.9); background:rgba(239,68,68,.22); }
+
+  .sum-line{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:14px;
+    padding-top:14px;
+    border-top:1px dashed rgba(255,255,255,.12);
+    font-size:13.5px;
+    font-weight:700;
+  }
+  .sum-line .ok{ color:var(--accent); }
+  .sum-line .bad{ color:var(--warn); }
+
+  .hint{
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.5;
+    margin-top:10px;
+  }
+
+  /* ---------- HISTORY ---------- */
+  .hist-item{
+    background:var(--card);
+    border-radius:18px;
+    padding:15px 17px;
+    margin-bottom:11px;
+    border:1px solid rgba(255,255,255,.04);
+    position:relative;
+    overflow:hidden;
+  }
+  .hist-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .hist-date{ font-size:12px; color:var(--muted); font-weight:600; }
+  .hist-amount{
+    font-size:17px;
+    font-weight:800;
+    color:var(--accent);
+    font-variant-numeric:tabular-nums;
+  }
+  .hist-list{ display:flex; flex-direction:column; gap:6px; }
+  .hist-line{
+    display:flex;
+    justify-content:space-between;
+    font-size:13px;
+    gap:10px;
+  }
+  .hist-line span:first-child{ color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .hist-line span:last-child{ font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+
+  .empty{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--muted);
+  }
+  .empty .ico{ font-size:44px; margin-bottom:14px; opacity:.45; }
+  .empty p{ font-size:14px; line-height:1.6; }
+
+  /* ---------- TABBAR ---------- */
+  nav.tabbar{
+    position:fixed;
+    left:0; right:0; bottom:0;
+    max-width:520px;
+    margin:0 auto;
+    display:flex;
+    background:rgba(20,23,28,.92);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    border-top:1px solid rgba(255,255,255,.06);
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+    z-index:50;
+  }
+  .tab{
+    flex:1;
+    background:none;
+    border:none;
+    color:var(--muted);
+    font-family:inherit;
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:.3px;
+    padding:7px 0 5px;
+    border-radius:14px;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    transition:color .2s, background .2s;
+  }
+  .tab .ic{ font-size:19px; line-height:1; filter:grayscale(1); opacity:.65; transition:.2s; }
+  .tab.active{ color:var(--accent); background:rgba(34,197,94,.08); }
+  .tab.active .ic{ filter:none; opacity:1; transform:translateY(-1px); }
+
+  /* ---------- TOAST ---------- */
+  #toast{
+    position:fixed;
+    left:50%;
+    bottom:calc(105px + env(safe-area-inset-bottom));
+    transform:translate(-50%, 20px);
+    background:#22c55e;
+    color:#04140a;
+    padding:12px 22px;
+    border-radius:14px;
+    font-size:14px;
+    font-weight:800;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s, transform .25s;
+    z-index:100;
+    box-shadow:0 10px 30px rgba(34,197,94,.35);
+    white-space:nowrap;
+  }
+  #toast.show{ opacity:1; transform:translate(-50%,0); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="logo">
+      <img src="https://hoff.ru/upload/hoff_resize/hoff-images/188/767/b0adb10fdcdba93726215c5526a08b79.jpg/1500x1000_85.jpeg" alt="Копилка">
+    </div>
+    <div>
+      <h1>КОПИЛКА</h1>
+      <div class="sub">Планируй свой доход</div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ======= РАСЧЁТ ======= -->
+    <section class="view active" id="view-calc">
+      <div class="amount-wrap">
+        <span class="cur">₽</span>
+        <input id="amountInput" type="text" inputmode="decimal" placeholder="0" autocomplete="off">
+      </div>
+
+      <div class="card" id="calcCard">
+        <div class="label">Распределение</div>
+        <div id="calcRows"></div>
+        <div class="total-box" id="calcTotal" style="display:none">
+          <span>Итого отложено</span>
+          <span id="calcTotalSum">0 ₽</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="saveBtn" disabled>💾 Сохранить неделю</button>
+    </section>
+
+    <!-- ======= КАТЕГОРИИ ======= -->
+    <section class="view" id="view-cats">
+      <div class="card">
+        <div class="label">Категории и проценты</div>
+        <div id="catList"></div>
+        <div class="sum-line">
+          <span>Сумма процентов</span>
+          <span id="pctTotal" class="ok">100%</span>
+        </div>
+      </div>
+
+      <button class="btn btn-ghost" id="addCatBtn">＋ Добавить категорию</button>
+      <button class="btn btn-ghost" id="resetBtn">↺ Сбросить к стандартным</button>
+      <p class="hint">Совет: сумма процентов должна быть равна 100%, иначе расчёт будет неполным. Например: 40% — накопления, 30% — свободные траты, 15% — на чёрный день, 15% — инвестиции.</p>
+    </section>
+
+    <!-- ======= ИСТОРИЯ ======= -->
+    <section class="view" id="view-hist">
+      <div id="histList"></div>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab active" data-view="calc"><span class="ic">🧮</span>Расчёт</button>
+    <button class="tab" data-view="cats"><span class="ic">⚙️</span>Категории</button>
+    <button class="tab" data-view="hist"><span class="ic">📅</span>История</button>
+  </nav>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* =========================================================
+   КОПИЛКА — логика приложения
+   ========================================================= */
+
+const STORAGE_KEY = 'kopilka_v1';
+
+const PALETTE = ['#22c55e','#3b82f6','#f59e0b','#a855f7','#ec4899','#14b8a6','#ef4444','#eab308','#06b6d4','#f97316'];
+
+const DEFAULT_CATS = () => ([
+  { id: uid(), name: 'Накопления',      percent: 40 },
+  { id: uid(), name: 'Свободные траты', percent: 30 },
+  { id: uid(), name: 'На чёрный день',  percent: 15 },
+  { id: uid(), name: 'Инвестиции',      percent: 15 },
+]);
+
+/* ---------- helpers ---------- */
+function uid(){ return Math.random().toString(36).slice(2,10); }
+
+function fmt(n){
+  if (!isFinite(n)) n = 0;
+  return new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 })
+    .format(Math.round(n * 100) / 100);
+}
+
+function parseNum(str){
+  if (!str) return 0;
+  const cleaned = String(str).replace(/\s/g,'').replace(',', '.').replace(/[^\d.]/g,'');
+  const v = parseFloat(cleaned);
+  return isFinite(v) ? v : 0;
+}
+
+function fmtDate(ts){
+  return new Intl.DateTimeFormat('ru-RU', {
+    day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'
+  }).format(new Date(ts));
+}
+
+/* ---------- state ---------- */
+let state = load();
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw){
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.categories)){
+        return {
+          categories: parsed.categories,
+          history: Array.isArray(parsed.history) ? parsed.history : []
+        };
+      }
+    }
+  }catch(e){ console.warn('load error', e); }
+  return { categories: DEFAULT_CATS(), history: [] };
+}
+
+function save(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e){ console.warn('save error', e); }
+}
+
+/* ---------- toast ---------- */
+let toastTimer;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+/* =========================================================
+   НАВИГАЦИЯ
+   ========================================================= */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('view-' + tab.dataset.view).classList.add('active');
+    if (tab.dataset.view === 'hist') renderHistory();
+  });
+});
+
+/* =========================================================
+   РАСЧЁТ
+   ========================================================= */
+const amountInput = document.getElementById('amountInput');
+const calcRows    = document.getElementById('calcRows');
+const calcTotal   = document.getElementById('calcTotal');
+const calcTotalSum= document.getElementById('calcTotalSum');
+const saveBtn     = document.getElementById('saveBtn');
+
+function currentAmount(){ return parseNum(amountInput.value); }
+
+function renderCalc(){
+  const amount = currentAmount();
+  const cats = state.categories;
+
+  if (!cats.length){
+    calcRows.innerHTML = '<p class="hint">Добавьте категории во вкладке «Категории».</p>';
+    calcTotal.style.display = 'none';
+    saveBtn.disabled = true;
+    return;
+  }
+
+  calcRows.innerHTML = cats.map((c, i) => {
+    const color = PALETTE[i % PALETTE.length];
+    const sum = amount * c.percent / 100;
+    return `
+      <div class="row">
+        <span class="dot" style="background:${color};color:${color}"></span>
+        <div class="row-info">
+          <div class="row-name">${escapeHtml(c.name) || 'Без названия'}</div>
+          <div class="row-pct">${c.percent}% от суммы</div>
+          <div class="bar"><i style="width:${Math.min(100, c.percent)}%;background:${color}"></i></div>
+        </div>
+        <div class="row-sum">${fmt(sum)} ₽</div>
+      </div>`;
+  }).join('');
+
+  // итог
+  const totalPct = cats.reduce((s,c) => s + (Number(c.percent) || 0), 0);
+  const totalSum = amount * totalPct / 100;
+
+  calcTotal.style.display = 'flex';
+  calcTotalSum.textContent = fmt(totalSum) + ' ₽';
+
+  saveBtn.disabled = amount <= 0;
+  saveBtn.textContent = amount > 0
+    ? `💾 Сохранить ${fmt(amount)} ₽`
+    : '💾 Сохранить неделю';
+}
+
+amountInput.addEventListener('input', () => {
+  // мягкая очистка: разрешаем цифры, пробелы, запятую и точку
+  let v = amountInput.value.replace(/[^\d\s.,]/g, '');
+  if (v !== amountInput.value) amountInput.value = v;
+  renderCalc();
+});
+
+saveBtn.addEventListener('click', () => {
+  const amount = currentAmount();
+  if (amount <= 0) return;
+
+  const breakdown = state.categories.map((c, i) => ({
+    name: c.name || 'Без названия',
+    percent: Number(c.percent) || 0,
+    sum: amount * (Number(c.percent) || 0) / 100,
+    color: PALETTE[i % PALETTE.length]
+  }));
+
+  state.history.unshift({
+    id: uid(),
+    ts: Date.now(),
+    amount,
+    breakdown
+  });
+
+  save();
+  amountInput.value = '';
+  renderCalc();
+  toast('Сохранено ✓');
+});
+
+/* =========================================================
+   КАТЕГОРИИ
+   ========================================================= */
+const catList = document.getElementById('catList');
+const pctTotalEl = document.getElementById('pctTotal');
+
+function renderCategories(){
+  catList.innerHTML = state.categories.map((c, i) => {
+    const color = PALETTE[i % PALETTE.length];
+    return `
+      <div class="cat-edit" data-id="${c.id}">
+        <span class="dot" style="background:${color};color:${color}"></span>
+        <input type="text" value="${escapeAttr(c.name)}" placeholder="Название" data-role="name" maxlength="28">
+        <div class="pct-box">
+          <input type="text" inputmode="numeric" value="${c.percent}" data-role="pct" maxlength="4">
+          <span>%</span>
+        </div>
+        <button class="del" data-role="del" aria-label="Удалить">×</button>
+      </div>`;
+  }).join('');
+
+  updatePctTotal();
+  renderCalc();
+}
+
+function updatePctTotal(){
+  const total = state.categories.reduce((s,c) => s + (Number(c.percent) || 0), 0);
+  pctTotalEl.textContent = total + '%';
+  pctTotalEl.className = total === 100 ? 'ok' : 'bad';
+}
+
+// делегирование событий в списке категорий
+catList.addEventListener('input', (e) => {
+  const row = e.target.closest('.cat-edit');
+  if (!row) return;
+  const cat = state.categories.find(c => c.id === row.dataset.id);
+  if (!cat) return;
+
+  if (e.target.dataset.role === 'name'){
+    cat.name = e.target.value;
+  } else if (e.target.dataset.role === 'pct'){
+    let raw = e.target.value.replace(/[^\d]/g, '').slice(0,3);
+    if (raw !== e.target.value) e.target.value = raw;
+    cat.percent = raw === '' ? 0 : parseInt(raw, 10);
+    if (cat.percent > 100) { cat.percent = 100; e.target.value = '100'; }
+  }
+
+  save();
+  updatePctTotal();
+  renderCalc();
+});
+
+catList.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-role="del"]');
+  if (!btn) return;
+  const row = btn.closest('.cat-edit');
+  const id = row.dataset.id;
+  state.categories = state.categories.filter(c => c.id !== id);
+  save();
+  renderCategories();
+  toast('Категория удалена');
+});
+
+document.getElementById('addCatBtn').addEventListener('click', () => {
+  state.categories.push({ id: uid(), name: 'Новая категория', percent: 0 });
+  save();
+  renderCategories();
+  // фокус на новое название
+  const rows = catList.querySelectorAll('.cat-edit');
+  const last = rows[rows.length - 1];
+  if (last){
+    const inp = last.querySelector('input[data-role="name"]');
+    inp.focus();
+    inp.select();
+  }
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (!confirm('Сбросить категории к стандартным? История сохранится.')) return;
+  state.categories = DEFAULT_CATS();
+  save();
+  renderCategories();
+  toast('Сброшено');
+});
+
+/* =========================================================
+   ИСТОРИЯ
+   ========================================================= */
+const histList = document.getElementById('histList');
+
+function renderHistory(){
+  if (!state.history.length){
+    histList.innerHTML = `
+      <div class="empty">
+        <div class="ico">📭</div>
+        <p>Здесь появятся сохранённые недели.<br>Введи сумму и нажми «Сохранить».</p>
+      </div>`;
+    return;
+  }
+
+  histList.innerHTML = state.history.map(h => `
+    <div class="hist-item" data-id="${h.id}">
+      <div class="hist-head">
+        <span class="hist-date">${fmtDate(h.ts)}</span>
+        <span class="hist-amount">${fmt(h.amount)} ₽</span>
+      </div>
+      <div class="hist-list">
+        ${h.breakdown.map(b => `
+          <div class="hist-line">
+            <span><span class="dot" style="display:inline-block;width:7px;height:7px;margin-right:7px;vertical-align:middle;background:${b.color};color:${b.color}"></span>${escapeHtml(b.name)} · ${b.percent}%</span>
+            <span>${fmt(b.sum)} ₽</span>
+          </div>`).join('')}
+      </div>
+      <button class="del" data-role="del-hist" style="position:absolute;top:10px;right:10px;width:26px;height:26px;font-size:16px;opacity:.55">×</button>
+    </div>
+  `).join('');
+}
+
+histList.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-role="del-hist"]');
+  if (!btn) return;
+  const item = btn.closest('.hist-item');
+  state.history = state.history.filter(h => h.id !== item.dataset.id);
+  save();
+  renderHistory();
+  toast('Запись удалена');
+});
+
+/* =========================================================
+   UTIL
+   ========================================================= */
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+function escapeAttr(s){ return escapeHtml(s); }
+
+/* =========================================================
+   INIT
+   ========================================================= */
+renderCategories();
+renderCalc();
+renderHistory();
+</script>
+</body>
+</html>
